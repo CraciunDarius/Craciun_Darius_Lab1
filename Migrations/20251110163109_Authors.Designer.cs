@@ -4,6 +4,7 @@ using Craciun_Darius_Lab2.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Craciun_Darius_Lab2.Migrations
 {
     [DbContext(typeof(Craciun_Darius_Lab2Context))]
-    partial class Craciun_Darius_Lab2ContextModelSnapshot : ModelSnapshot
+    [Migration("20251110163109_Authors")]
+    partial class Authors
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -96,7 +99,7 @@ namespace Craciun_Darius_Lab2.Migrations
             modelBuilder.Entity("Craciun_Darius_Lab2.Models.Book", b =>
                 {
                     b.HasOne("Craciun_Darius_Lab2.Models.Author", "Author")
-                        .WithMany("Books")
+                        .WithMany()
                         .HasForeignKey("AuthorID");
 
                     b.HasOne("Craciun_Darius_Lab2.Models.Publisher", "Publisher")
@@ -106,11 +109,6 @@ namespace Craciun_Darius_Lab2.Migrations
                     b.Navigation("Author");
 
                     b.Navigation("Publisher");
-                });
-
-            modelBuilder.Entity("Craciun_Darius_Lab2.Models.Author", b =>
-                {
-                    b.Navigation("Books");
                 });
 
             modelBuilder.Entity("Craciun_Darius_Lab2.Models.Publisher", b =>

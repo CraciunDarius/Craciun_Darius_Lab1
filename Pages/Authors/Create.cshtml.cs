@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Craciun_Darius_Lab2.Data;
 using Craciun_Darius_Lab2.Models;
 
-namespace Craciun_Darius_Lab2.Pages.Books
+namespace Craciun_Darius_Lab2.Pages.Authors
 {
     public class CreateModel : PageModel
     {
@@ -21,13 +21,11 @@ namespace Craciun_Darius_Lab2.Pages.Books
 
         public IActionResult OnGet()
         {
-            ViewData["PublisherID"] = new SelectList(_context.Set<Publisher>(), "ID", "PublisherName");
-            ViewData["AuthorID"] = new SelectList(_context.Set<Author>(), "ID", "FullName");
             return Page();
         }
 
         [BindProperty]
-        public Book Book { get; set; } = default!;
+        public Author Author { get; set; } = default!;
 
         // For more information, see https://aka.ms/RazorPagesCRUD.
         public async Task<IActionResult> OnPostAsync()
@@ -37,7 +35,7 @@ namespace Craciun_Darius_Lab2.Pages.Books
                 return Page();
             }
 
-            _context.Book.Add(Book);
+            _context.Author.Add(Author);
             await _context.SaveChangesAsync();
 
             return RedirectToPage("./Index");

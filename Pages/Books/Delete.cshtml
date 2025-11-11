@@ -19,10 +19,16 @@
             @Html.DisplayFor(model => model.Book.Title)
         </dd>
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Book.Author)
+            @Html.DisplayNameFor(model => model.Book.Author.FullName)
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Book.Author)
+            @Html.DisplayFor(model => model.Book.Author.FullName)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Book.Publisher.PublisherName)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Book.Publisher.PublisherName)
         </dd>
         <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.Book.Price)
