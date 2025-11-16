@@ -50,7 +50,8 @@ namespace Craciun_Darius_Lab2.Areas.Identity.Pages.Account
             _emailSender = emailSender;
             _context = context;
         }
-        [BindProperty]
+
+        // REMOVE [BindProperty] from Member - we'll create it manually
         public Member Member { get; set; }
 
         /// <summary>
@@ -105,6 +106,12 @@ namespace Craciun_Darius_Lab2.Areas.Identity.Pages.Account
             [Display(Name = "Confirm password")]
             [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
             public string ConfirmPassword { get; set; }
+
+            // Add Member fields here - match your Member model exactly
+            public string FirstName { get; set; }
+            public string LastName { get; set; }
+            public string Adress { get; set; }  // Note: Adress with one 'd' to match Member model
+            public string Phone { get; set; }
         }
 
 
@@ -116,53 +123,79 @@ namespace Craciun_Darius_Lab2.Areas.Identity.Pages.Account
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
+            _logger.LogWarning("========== REGISTER POST CALLED ==========");
+            _logger.LogWarning($"Email: {Input?.Email}");
+
             returnUrl ??= Url.Content("~/");
-            ExternalLogins = (await
-            _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+            ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+
+            // Check if model state is valid
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("ModelState is INVALID");
+                foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    _logger.LogWarning($"Validation Error: {error.ErrorMessage}");
+                }
+                return Page();
+            }
+
+            _logger.LogWarning("ModelState is VALID, proceeding with user creation...");
+
             var user = CreateUser();
-            await _userStore.SetUserNameAsync(user, Input.Email,
-            CancellationToken.None);
-            await _emailStore.SetEmailAsync(user, Input.Email,
-            CancellationToken.None);
-            var result = await _userManager.CreateAsync(user,
-            Input.Password);
-            Member.Email = Input.Email;
-            _context.Member.Add(Member);
-            await _context.SaveChangesAsync();
+            await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
+            await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+
+            var result = await _userManager.CreateAsync(user, Input.Password);
+
+            // ONLY create Member if user creation succeeded
             if (result.Succeeded)
             {
                 _logger.LogInformation("User created a new account with password.");
+
+                // Auto-confirm email for development (remove in production with real email service)
                 var userId = await _userManager.GetUserIdAsync(user);
-                var code = await
-                _userManager.GenerateEmailConfirmationTokenAsync(user);
-                code =
-                WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                var callbackUrl = Url.Page("/Account/ConfirmEmail",
-                pageHandler: null,
-                values: new
+                var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                await _userManager.ConfirmEmailAsync(user, code);
+
+                // Add user to role
+                var roleResult = await _userManager.AddToRoleAsync(user, "User");
+                if (!roleResult.Succeeded)
                 {
-                    area = "Identity",
-                    userId = userId,
-                    code = code,
-                    returnUrl = returnUrl
-                },
-                protocol: Request.Scheme);
-                await _emailSender.SendEmailAsync(Input.Email, "Confirm your email", $"Please confirm your account by <ahref = '{HtmlEncoder.Default.Encode(callbackUrl)}' > clicking here </ a >.");
-            if(_userManager.Options.SignIn.RequireConfirmedAccount)
-                {
-                    return RedirectToPage("RegisterConfirmation", new
-                    {
-                        email = Input.Email,
-                        returnUrl = returnUrl
-                    });
+                    _logger.LogWarning("Failed to add user to role 'User'");
                 }
-                else
+
+                // Now create and save the Member using Input fields
+                Member = new Member
                 {
-                    await _signInManager.SignInAsync(user,
-                    isPersistent: false);
-                    return LocalRedirect(returnUrl);
-                }
+                    Email = Input.Email,
+                    FirstName = Input.FirstName,
+                    LastName = Input.LastName,
+                    Adress = Input.Adress,
+                    Phone = Input.Phone
+                };
+                _context.Member.Add(Member);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Account created and confirmed successfully.");
+
+                // Add success message
+                TempData["SuccessMessage"] = $"Account created successfully for {Input.Email}! You are now logged in.";
+
+                // Sign the user in immediately
+                await _signInManager.SignInAsync(user, isPersistent: false);
+                _logger.LogWarning("========== USER SIGNED IN SUCCESSFULLY ==========");
+                return LocalRedirect(returnUrl);
             }
+
+            // If we got here, user creation failed - add errors to ModelState so they display
+            _logger.LogError("========== USER CREATION FAILED ==========");
+            foreach (var error in result.Errors)
+            {
+                _logger.LogError($"Error: {error.Code} - {error.Description}");
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+
             return Page();
         }
 
